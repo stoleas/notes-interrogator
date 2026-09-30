@@ -1,11 +1,12 @@
 # notes-interrogator
 
-Harness-agnostic CLI that reads Google Takeout **My Activity → Gemini Apps** JSON for a single day, extracts accountability tasks with a configurable OpenAI-compatible LLM, and creates tasks via a user-defined command (for example a Google Tasks CLI).
+Harness-agnostic CLI that ingests **Gemini meeting notes from your mailbox** (via a configurable mail CLI such as gog) over a rolling lookback window, extracts accountability tasks with a configurable OpenAI-compatible LLM, and creates tasks via a user-defined command. Optional **Takeout** ingest remains available for Gemini Apps activity JSON.
 
 ## Requirements
 
 - Python 3.11+
-- Takeout export: **My Activity** → **Gemini Apps**, activity records in **JSON**
+- Mail CLI with search + get (example: gog Gmail) and a search query for meeting-note messages
+- Optional Takeout export: **My Activity** → **Gemini Apps**, activity records in **JSON** (`input.source = "takeout"`)
 - LLM HTTP API compatible with `POST /v1/chat/completions` and `response_format: json_object`
 - External task CLI invoked through `tasks.create_command` in config
 
@@ -31,7 +32,11 @@ cp prompts/extract-tasks.example.md "${XDG_CONFIG_HOME:-$HOME/.config}/notes-int
 
 | Variable | Purpose |
 |----------|---------|
-| `NOTES_INTERROGATOR_ACTIVITY_JSON` | Path to `MyActivity.json` from Takeout |
+| `MAIL_CLI` | Mail CLI executable (search/get subcommands) |
+| `MAIL_ACCOUNT` | Mailbox account flag for the CLI |
+| `MAIL_CLIENT` | OAuth client name for the CLI (if required) |
+| `GEMINI_NOTES_SENDER` | Sender filter for meeting notes (used in example query) |
+| `NOTES_INTERROGATOR_ACTIVITY_JSON` | Path to `MyActivity.json` (takeout mode only) |
 | `LLM_BASE_URL` | API base URL (no trailing path) |
 | `LLM_MODEL` | Model id |
 | `LLM_API_KEY` | API key (name overridable via `llm.api_key_env`) |
@@ -47,7 +52,11 @@ cp prompts/extract-tasks.example.md "${XDG_CONFIG_HOME:-$HOME/.config}/notes-int
 notes-interrogator validate-config
 ```
 
-## Takeout export (manual)
+## Mail ingest (default)
+
+`input.source = "mail"` runs `search_command` with `{query}` replaced by `search_query`, keeps hits within `lookback_hours` (default 24), then fetches each message with `get_command` (`{message_id}`). Example query shape: `from:gemini-notes@google.com subject:Notes`.
+
+## Takeout export (optional)
 
 1. Open [Google Takeout](https://takeout.google.com).
 2. Deselect all, then select **My Activity**.
@@ -105,4 +114,4 @@ uv run pytest
 
 ## License
 
-Use and modify as needed for your environment.
+MIT — see [LICENSE](LICENSE).

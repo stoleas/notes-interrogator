@@ -91,7 +91,7 @@ def extract_tasks(
         "Content-Type": "application/json",
     }
 
-    with httpx.Client(timeout=120.0) as client:
+    with httpx.Client(timeout=300.0) as client:
         response = client.post(url, json=payload, headers=headers)
         response.raise_for_status()
         body = response.json()

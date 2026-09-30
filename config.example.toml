@@ -1,6 +1,36 @@
 [input]
-activity_json = "${NOTES_INTERROGATOR_ACTIVITY_JSON}"
+source = "mail"
 timezone = "America/New_York"
+lookback_hours = 24
+search_query = "from:${GEMINI_NOTES_SENDER} subject:Notes"
+search_command = [
+  "${MAIL_CLI}",
+  "gmail",
+  "search",
+  "-a",
+  "${MAIL_ACCOUNT}",
+  "--client",
+  "${MAIL_CLIENT}",
+  "-j",
+  "--results-only",
+  "{query}",
+]
+get_command = [
+  "${MAIL_CLI}",
+  "gmail",
+  "get",
+  "-a",
+  "${MAIL_ACCOUNT}",
+  "--client",
+  "${MAIL_CLIENT}",
+  "-j",
+  "--results-only",
+  "{message_id}",
+]
+command_env = {}
+
+# Takeout mode (optional): set source = "takeout" and fill activity_json.
+activity_json = "${NOTES_INTERROGATOR_ACTIVITY_JSON}"
 conversation_id_pattern = "/app/(?:c|chat)/([^/?#]+)"
 
 [run]

@@ -6,7 +6,9 @@ from pathlib import Path
 from typing import Any
 
 import tomllib
-from pydantic import BaseModel, Field, field_validator
+from typing import Literal
+
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 _ENV_PATTERN = re.compile(r"\$\{([^}]+)\}")
 
@@ -37,16 +39,33 @@ def default_config_path() -> Path:
 
 
 class InputConfig(BaseModel):
-    activity_json: str
+    source: Literal["takeout", "mail"] = "mail"
     timezone: str = "UTC"
+    activity_json: str = ""
     conversation_id_pattern: str = r"/app/(?:c|chat)/([^/?#]+)"
+    lookback_hours: int = 24
+    search_query: str = ""
+    search_command: list[str] = Field(default_factory=list)
+    get_command: list[str] = Field(default_factory=list)
+    command_env: dict[str, str] = Field(default_factory=dict)
 
-    @field_validator("activity_json")
-    @classmethod
-    def activity_json_nonempty(cls, v: str) -> str:
-        if not v.strip():
-            raise ValueError("input.activity_json is empty (set env or config path)")
-        return v
+    @model_validator(mode="after")
+    def validate_source_fields(self) -> InputConfig:
+        if self.source == "takeout":
+            if not self.activity_json.strip():
+                raise ValueError("input.activity_json is empty for takeout source")
+        if self.source == "mail":
+            if not self.search_query.strip():
+                raise ValueError("input.search_query is empty for mail source")
+            if not self.search_command:
+                raise ValueError("input.search_command is required for mail source")
+            if not self.get_command:
+                raise ValueError("input.get_command is required for mail source")
+            if "{query}" not in " ".join(self.search_command):
+                raise ValueError("input.search_command must include {query}")
+            if "{message_id}" not in " ".join(self.get_command):
+                raise ValueError("input.get_command must include {message_id}")
+        return self
 
 
 class RunConfig(BaseModel):

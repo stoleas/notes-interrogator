@@ -11,7 +11,7 @@ from pydantic import ValidationError
 
 from notes_interrogator.config import AppConfig, default_config_path, load_config, resolve_state_path
 from notes_interrogator.extract.llm import extract_tasks
-from notes_interrogator.ingest.takeout import load_bundles_for_date
+from notes_interrogator.ingest.loader import load_bundles
 from notes_interrogator.models import RunReport
 from notes_interrogator.sink.exec import create_tasks
 from notes_interrogator.state.store import ProcessedStore, task_fingerprint
@@ -49,18 +49,15 @@ def cmd_ingest_preview(args: argparse.Namespace) -> int:
     try:
         cfg = _resolve_config(args.config)
         target = _parse_target_date(args.date or cfg.run.default_date, cfg.input.timezone)
-        bundles = load_bundles_for_date(
-            cfg.input.activity_json,
-            target,
-            cfg.input.timezone,
-            cfg.input.conversation_id_pattern,
-        )
-    except (FileNotFoundError, ValidationError, ValueError) as exc:
+        bundles = load_bundles(cfg.input, target)
+    except (FileNotFoundError, ValidationError, ValueError, RuntimeError) as exc:
         print(f"ingest-preview failed: {exc}", file=sys.stderr)
         return 2
 
     payload = {
         "date": target.isoformat(),
+        "source": cfg.input.source,
+        "lookback_hours": cfg.input.lookback_hours if cfg.input.source == "mail" else None,
         "bundles": len(bundles),
         "conversations": [
             {
@@ -83,19 +80,14 @@ def cmd_run(args: argparse.Namespace) -> int:
     try:
         cfg = _resolve_config(args.config)
         target = _parse_target_date(args.date or cfg.run.default_date, cfg.input.timezone)
-        bundles = load_bundles_for_date(
-            cfg.input.activity_json,
-            target,
-            cfg.input.timezone,
-            cfg.input.conversation_id_pattern,
-        )
+        bundles = load_bundles(cfg.input, target)
         tasks = extract_tasks(
             bundles,
             target,
             cfg.llm,
             include_low_confidence=args.include_low_confidence,
         )
-    except (FileNotFoundError, ValidationError, ValueError) as exc:
+    except (FileNotFoundError, ValidationError, ValueError, RuntimeError) as exc:
         print(f"run failed: {exc}", file=sys.stderr)
         return 2
 

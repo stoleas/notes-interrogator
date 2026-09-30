@@ -17,6 +17,7 @@ def test_load_config_expands_env(tmp_path, monkeypatch) -> None:
     config_file.write_text(
         """
 [input]
+source = "takeout"
 activity_json = "${NOTES_INTERROGATOR_ACTIVITY_JSON}"
 timezone = "UTC"
 
@@ -45,6 +46,7 @@ def test_missing_activity_json_raises(tmp_path, monkeypatch) -> None:
     config_file.write_text(
         """
 [input]
+source = "takeout"
 activity_json = "${NOTES_INTERROGATOR_ACTIVITY_JSON}"
 
 [llm]
