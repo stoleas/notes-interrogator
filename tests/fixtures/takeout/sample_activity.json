@@ -1,0 +1,35 @@
+[
+  {
+    "header": "Gemini Apps",
+    "title": "Used Gemini",
+    "titleUrl": "https://example.test/app/c/conv-abc-123",
+    "time": "2026-09-30T14:30:00.000Z",
+    "details": [
+      { "name": "Prompt", "value": "Remind me to email the team about the Q4 roadmap by Friday." },
+      { "name": "Response", "value": "I will add a follow-up to email the team about the Q4 roadmap." }
+    ]
+  },
+  {
+    "header": "Gemini Apps",
+    "title": "Used Gemini",
+    "titleUrl": "https://example.test/app/c/conv-abc-123",
+    "time": "2026-09-30T15:00:00.000Z",
+    "userInteractions": [
+      {
+        "userInteraction": {
+          "request": "{\"text\": \"Also schedule a 1:1 with Alex next week.\"}",
+          "response": "{\"text\": \"Noted — schedule a 1:1 with Alex next week.\"}"
+        }
+      }
+    ]
+  },
+  {
+    "header": "Gemini Apps",
+    "title": "Used Gemini",
+    "titleUrl": "https://example.test/app/c/conv-other-999",
+    "time": "2026-09-29T10:00:00.000Z",
+    "details": [
+      { "name": "Prompt", "value": "Yesterday task" }
+    ]
+  }
+]

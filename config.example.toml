@@ -1,0 +1,33 @@
+[input]
+activity_json = "${NOTES_INTERROGATOR_ACTIVITY_JSON}"
+timezone = "America/New_York"
+conversation_id_pattern = "/app/(?:c|chat)/([^/?#]+)"
+
+[run]
+default_date = "today"
+
+[llm]
+base_url = "${LLM_BASE_URL}"
+model = "${LLM_MODEL}"
+api_key_env = "LLM_API_KEY"
+prompt_path = "${XDG_CONFIG_HOME}/notes-interrogator/prompts/extract-tasks.md"
+temperature = 0.2
+max_input_chars = 120000
+
+[tasks]
+list_id = "${TASKS_LIST_ID}"
+create_command = [
+  "${TASKS_CLI}",
+  "tasks",
+  "add",
+  "{list_id}",
+  "--title",
+  "{title}",
+  "--notes",
+  "{notes}",
+]
+create_command_env = {}
+dry_run_env = "NOTES_INTERROGATOR_DRY_RUN"
+
+[state]
+path = "${XDG_DATA_HOME}/notes-interrogator/processed.json"
