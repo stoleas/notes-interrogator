@@ -37,12 +37,28 @@ conversation_id_pattern = "/app/(?:c|chat)/([^/?#]+)"
 default_date = "today"
 
 [llm]
+# provider = "http" uses OpenAI-compatible POST /v1/chat/completions (LLM_BASE_URL, LLM_MODEL, LLM_API_KEY).
+# provider = "cursor_agent" uses the Cursor CLI (`agent --print`) — no external LLM API key.
+provider = "http"
 base_url = "${LLM_BASE_URL}"
 model = "${LLM_MODEL}"
 api_key_env = "LLM_API_KEY"
 prompt_path = "${XDG_CONFIG_HOME}/notes-interrogator/prompts/extract-tasks.md"
 temperature = 0.2
 max_input_chars = 120000
+
+# Cursor agent provider (set provider = "cursor_agent" and fill cursor_command):
+# cursor_command = [
+#   "${CURSOR_AGENT_CLI}",
+#   "--print",
+#   "--output-format",
+#   "json",
+#   "--mode",
+#   "ask",
+#   "--trust",
+# ]
+# cursor_model = "composer-2.5"
+# cursor_timeout_seconds = 900
 
 [tasks]
 list_id = "${TASKS_LIST_ID}"

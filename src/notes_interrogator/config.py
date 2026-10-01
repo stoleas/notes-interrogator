@@ -38,6 +38,32 @@ def default_config_path() -> Path:
     return Path.home() / ".config" / "notes-interrogator" / "config.toml"
 
 
+def _load_env_file(path: Path) -> None:
+    """Load KEY=VALUE lines from path into os.environ (does not override existing)."""
+    if not path.is_file():
+        return
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line.removeprefix("export ").strip()
+        if "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        if not key or key in os.environ:
+            continue
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+            value = value[1:-1]
+        os.environ[key] = value
+
+
+def _load_config_env(config_path: Path) -> None:
+    _load_env_file(config_path.parent / "env")
+
+
 class InputConfig(BaseModel):
     source: Literal["takeout", "mail"] = "mail"
     timezone: str = "UTC"
@@ -73,26 +99,32 @@ class RunConfig(BaseModel):
 
 
 class LlmConfig(BaseModel):
-    base_url: str
-    model: str
+    provider: Literal["http", "cursor_agent"] = "http"
+    base_url: str = ""
+    model: str = ""
     api_key_env: str = "LLM_API_KEY"
     prompt_path: str
     temperature: float = 0.2
     max_input_chars: int = 120_000
+    cursor_command: list[str] = Field(default_factory=list)
+    cursor_model: str = ""
+    cursor_workspace: str = ""
+    cursor_timeout_seconds: float = 900.0
 
-    @field_validator("base_url")
-    @classmethod
-    def base_url_ok(cls, v: str) -> str:
-        if not v.strip():
-            raise ValueError("llm.base_url must not be empty")
-        return v.rstrip("/")
-
-    @field_validator("model", "prompt_path")
-    @classmethod
-    def required_nonempty(cls, v: str) -> str:
-        if not v.strip():
-            raise ValueError("llm setting must not be empty")
-        return v
+    @model_validator(mode="after")
+    def provider_fields(self) -> LlmConfig:
+        if not self.prompt_path.strip():
+            raise ValueError("llm.prompt_path must not be empty")
+        if self.provider == "http":
+            if not self.base_url.strip():
+                raise ValueError("llm.base_url must not be empty")
+            if not self.model.strip():
+                raise ValueError("llm.model must not be empty")
+            self.base_url = self.base_url.rstrip("/")
+        elif self.provider == "cursor_agent":
+            if not self.cursor_command:
+                raise ValueError("llm.cursor_command is required for cursor_agent provider")
+        return self
 
 
 class TasksConfig(BaseModel):
@@ -137,6 +169,7 @@ class AppConfig(BaseModel):
 
 def load_config(path: Path | None = None) -> AppConfig:
     config_path = path or default_config_path()
+    _load_config_env(config_path)
     if not config_path.is_file():
         raise FileNotFoundError(
             f"Config not found: {config_path}. Copy config.example.toml and set env vars."

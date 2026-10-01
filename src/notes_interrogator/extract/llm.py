@@ -71,6 +71,16 @@ def extract_tasks(
     if not bundles:
         return []
 
+    if cfg.provider == "cursor_agent":
+        from notes_interrogator.extract.cursor_agent import extract_tasks_cursor
+
+        return extract_tasks_cursor(
+            bundles,
+            target,
+            cfg,
+            include_low_confidence=include_low_confidence,
+        )
+
     prompt_path = Path(cfg.prompt_path).expanduser()
     system_prompt = prompt_path.read_text(encoding="utf-8")
     selected = _truncate_bundles(bundles, cfg.max_input_chars)
